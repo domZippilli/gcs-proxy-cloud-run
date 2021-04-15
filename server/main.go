@@ -126,27 +126,9 @@ func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
 	output http.ResponseWriter) (err error) {
 
 	// get object metadata. Use a cache to speed up TTFB.
-	var objectAttrs *storage.ObjectAttrs
-	maybeAttrs, hit := contentHeaderCache.Get(objectHandle.ObjectName())
-	if hit {
-		objectAttrs = maybeAttrs.(*storage.ObjectAttrs)
-	} else {
-		objectAttrs, err = objectHandle.Attrs(ctx)
-		if err != nil {
-			return err
-		}
-		// cache the result, honoring Cache-Control: max-age
-		expiry := cache.DefaultExpiration
-		cacheControl := objectAttrs.CacheControl
-		if cacheControl != "" &&
-			strings.HasPrefix(cacheControl, "max-age") {
-			ccSecs, err := strconv.Atoi(strings.Split(cacheControl, "=")[1])
-			if err != nil {
-				return err
-			}
-			expiry = time.Second * time.Duration(ccSecs)
-		}
-		contentHeaderCache.Set(objectHandle.ObjectName(), objectAttrs, expiry)
+	objectAttrs, err := getAttrs(ctx, objectHandle)
+	if err != nil {
+		return err
 	}
 
 	// set all headers
@@ -163,5 +145,33 @@ func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
 		output.Header().Set("Content-Type", objectAttrs.ContentType)
 	}
 	output.Header().Set("Content-Length", fmt.Sprint(objectAttrs.Size))
+	return
+}
+
+func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
+	objectAttrs *storage.ObjectAttrs, err error) {
+	// get object metadata. Use a cache to speed up TTFB.
+	maybeAttrs, hit := contentHeaderCache.Get(objectHandle.ObjectName())
+	if hit {
+		objectAttrs = maybeAttrs.(*storage.ObjectAttrs)
+	} else {
+		objectAttrs, err = objectHandle.Attrs(ctx)
+		if err != nil {
+			return
+		}
+		// cache the result, honoring Cache-Control: max-age
+		expiry := cache.DefaultExpiration
+		cacheControl := objectAttrs.CacheControl
+		if cacheControl != "" &&
+			strings.HasPrefix(cacheControl, "max-age") {
+			ccSecs, err := strconv.Atoi(strings.Split(cacheControl, "=")[1])
+			if err != nil {
+				log.Println(err)
+			} else {
+				expiry = time.Second * time.Duration(ccSecs)
+			}
+		}
+		contentHeaderCache.Set(objectHandle.ObjectName(), objectAttrs, expiry)
+	}
 	return
 }
