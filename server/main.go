@@ -87,8 +87,8 @@ func get(ctx context.Context, output http.ResponseWriter, input *http.Request) {
 	}
 	defer responseContent.Close()
 
-	// Copy with a 16MB buffer (aligns well with optimal chunk size for GCS)
-	_, err = io.CopyBuffer(output, responseContent, make([]byte, 16*1024^2))
+	// stream the response
+	_, err = io.Copy(output, responseContent)
 	if err != nil {
 		log.Fatal(err)
 	}
