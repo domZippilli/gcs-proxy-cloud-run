@@ -2,6 +2,8 @@
 
 A Cloud Run service to proxy a GCS bucket. Useful for conditional serving logic, transcoding, certain security features, etc.
 
+Many use cases can be satisfied by using [built-in static website hosting for GCS with a Cloud Load Balancer](https://cloud.google.com/storage/docs/hosting-static-website). If there are limitations of that feature that are blocking you, this proxy approach might be for you.
+
 This contrasts with [gcs-proxy-cloud-function](http://github.com/domZippilli/gcs-proxy-cloud-function) in that it uses Cloud Run, which conveys an important advantage -- streaming responses.
 
 ## Deployment
