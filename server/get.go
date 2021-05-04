@@ -47,11 +47,7 @@ func get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 	defer objectContent.Close()
 	if len(filters) > 0 {
 		// apply filter chain
-		filtered, err := FilterChain(ctx, objectContent, request, response, filters)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = io.Copy(response, filtered)
+		_, err = FilteredResponse(ctx, response, objectContent, request, filters)
 	} else {
 		// unfiltered, simple copy
 		_, err = io.Copy(response, objectContent)
@@ -60,4 +56,15 @@ func get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 		log.Fatal(err)
 	}
 	return
+}
+
+// convertURLtoObject converts a URL to an appropriate object path. This also
+// includes redirecting root requests "/" to index.html.
+func convertURLtoObject(url string) (object string) {
+	switch url {
+	case "/":
+		return "index.html"
+	default:
+		return url[1:]
+	}
 }

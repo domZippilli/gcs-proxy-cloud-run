@@ -28,7 +28,7 @@ import (
 
 // setHeaders will transfer HTTP headers from GCS metadata to the response.
 func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
-	output http.ResponseWriter) (err error) {
+	response http.ResponseWriter) (err error) {
 
 	// get object metadata. Use a cache to speed up TTFB.
 	objectAttrs, err := getAttrs(ctx, objectHandle)
@@ -38,18 +38,18 @@ func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
 
 	// set all headers
 	if objectAttrs.CacheControl != "" {
-		output.Header().Set("Cache-Control", objectAttrs.CacheControl)
+		response.Header().Set("Cache-Control", objectAttrs.CacheControl)
 	}
 	if objectAttrs.ContentEncoding != "" {
-		output.Header().Set("Content-Encoding", objectAttrs.ContentEncoding)
+		response.Header().Set("Content-Encoding", objectAttrs.ContentEncoding)
 	}
 	if objectAttrs.ContentLanguage != "" {
-		output.Header().Set("Content-Language", objectAttrs.ContentLanguage)
+		response.Header().Set("Content-Language", objectAttrs.ContentLanguage)
 	}
 	if objectAttrs.ContentType != "" {
-		output.Header().Set("Content-Type", objectAttrs.ContentType)
+		response.Header().Set("Content-Type", objectAttrs.ContentType)
 	}
-	output.Header().Set("Content-Length", fmt.Sprint(objectAttrs.Size))
+	response.Header().Set("Content-Length", fmt.Sprint(objectAttrs.Size))
 	return
 }
 
@@ -60,6 +60,7 @@ func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
 	if hit {
 		objectAttrs = maybeAttrs.(*storage.ObjectAttrs)
 	} else {
+		// TODO(domz): no need for full projection here
 		objectAttrs, err = objectHandle.Attrs(ctx)
 		if err != nil {
 			return

@@ -63,26 +63,13 @@ func main() {
 // permits HTTP protocol usage of a GCS bucket's contents.
 func ProxyGCS(output http.ResponseWriter, input *http.Request) {
 	ctx := context.Background()
-
-	// route HTTP methods to appropriate handlers
+	// route HTTP methods to appropriate handlers.
+	// ===> Your filters go below here <===
 	switch input.Method {
 	case http.MethodGet:
-		get(ctx, output, input, []MediaFilter{
-			NoOpFilter,
-		})
+		get(ctx, output, input, []MediaFilter{})
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}
 	return
-}
-
-// convertURLtoObject converts a URL to an appropriate object path. This also
-// includes redirecting root requests "/" to index.html.
-func convertURLtoObject(url string) (object string) {
-	switch url {
-	case "/":
-		return "index.html"
-	default:
-		return url[1:]
-	}
 }
