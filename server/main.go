@@ -15,14 +15,9 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
-
 	"time"
 
 	storage "cloud.google.com/go/storage"
@@ -72,7 +67,9 @@ func ProxyGCS(output http.ResponseWriter, input *http.Request) {
 	// route HTTP methods to appropriate handlers
 	switch input.Method {
 	case http.MethodGet:
-		get(ctx, output, input)
+		get(ctx, output, input, []MediaFilter{
+			NoOpFilter,
+		})
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}
@@ -88,90 +85,4 @@ func convertURLtoObject(url string) (object string) {
 	default:
 		return url[1:]
 	}
-}
-
-// get handles GET requests.
-func get(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	// Do the request to get response content stream
-	objectName := convertURLtoObject(input.URL.String())
-	objectHandle := GCS.Bucket(BUCKET).Object(objectName)
-
-	// get static-serving metadata and set headers
-	err := setHeaders(ctx, objectHandle, output)
-	if err != nil {
-		if err == storage.ErrObjectNotExist {
-			http.Error(output, "404 - Not Found", http.StatusNotFound)
-			return
-		} else {
-			log.Fatal(err)
-		}
-	}
-
-	// get object content and send it
-	objectContent, err := objectHandle.NewReader(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer objectContent.Close()
-
-	_, err = io.Copy(output, objectContent)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return
-}
-
-// setHeaders will transfer HTTP headers from GCS metadata to the response.
-func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
-	output http.ResponseWriter) (err error) {
-
-	// get object metadata. Use a cache to speed up TTFB.
-	objectAttrs, err := getAttrs(ctx, objectHandle)
-	if err != nil {
-		return err
-	}
-
-	// set all headers
-	if objectAttrs.CacheControl != "" {
-		output.Header().Set("Cache-Control", objectAttrs.CacheControl)
-	}
-	if objectAttrs.ContentEncoding != "" {
-		output.Header().Set("Content-Encoding", objectAttrs.ContentEncoding)
-	}
-	if objectAttrs.ContentLanguage != "" {
-		output.Header().Set("Content-Language", objectAttrs.ContentLanguage)
-	}
-	if objectAttrs.ContentType != "" {
-		output.Header().Set("Content-Type", objectAttrs.ContentType)
-	}
-	output.Header().Set("Content-Length", fmt.Sprint(objectAttrs.Size))
-	return
-}
-
-func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
-	objectAttrs *storage.ObjectAttrs, err error) {
-	// get object metadata. Use a cache to speed up TTFB.
-	maybeAttrs, hit := contentHeaderCache.Get(objectHandle.ObjectName())
-	if hit {
-		objectAttrs = maybeAttrs.(*storage.ObjectAttrs)
-	} else {
-		objectAttrs, err = objectHandle.Attrs(ctx)
-		if err != nil {
-			return
-		}
-		// cache the result, honoring Cache-Control: max-age
-		expiry := cache.DefaultExpiration
-		cacheControl := objectAttrs.CacheControl
-		if cacheControl != "" &&
-			strings.HasPrefix(cacheControl, "max-age") {
-			ccSecs, err := strconv.Atoi(strings.Split(cacheControl, "=")[1])
-			if err != nil {
-				log.Println(err)
-			} else {
-				expiry = time.Second * time.Duration(ccSecs)
-			}
-		}
-		contentHeaderCache.Set(objectHandle.ObjectName(), objectAttrs, expiry)
-	}
-	return
 }
