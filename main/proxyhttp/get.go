@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package proxyhttp
 
 import (
 	"context"
@@ -19,14 +19,17 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
+
 	storage "cloud.google.com/go/storage"
 )
 
 // get handles GET requests.
-func get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []MediaFilter) {
+func get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
 	// Do the request to get response content stream
 	objectName := convertURLtoObject(request.URL.String())
-	objectHandle := GCS.Bucket(BUCKET).Object(objectName)
+	objectHandle := common.GCS.Bucket(common.BUCKET).Object(objectName)
 
 	// get static-serving metadata and set headers
 	err := setHeaders(ctx, objectHandle, response)
@@ -47,7 +50,7 @@ func get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 	defer objectContent.Close()
 	if len(filters) > 0 {
 		// apply filter chain
-		_, err = FilteredResponse(ctx, response, objectContent, request, filters)
+		_, err = filter.FilteredResponse(ctx, response, objectContent, request, filters)
 	} else {
 		// unfiltered, simple copy
 		_, err = io.Copy(response, objectContent)
