@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package proxyhttp
 
 import (
 	"context"
@@ -25,6 +25,11 @@ import (
 	storage "cloud.google.com/go/storage"
 	cache "github.com/patrickmn/go-cache"
 )
+
+// objectMetadataCache stores object metadata to speed up serving of data.
+// The data itself is not cached, just values like Content-Type, Cache-Control,
+// etc.
+var objectMetadataCache = cache.New(90*time.Second, 10*time.Minute)
 
 // setHeaders will transfer HTTP headers from GCS metadata to the response.
 func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
@@ -53,10 +58,12 @@ func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
 	return
 }
 
+// getAttrs will get the metadata of an object, using a local cache to
+// store metadata and avoid repeated metadata GETs.
 func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
 	objectAttrs *storage.ObjectAttrs, err error) {
 	// get object metadata. Use a cache to speed up TTFB.
-	maybeAttrs, hit := contentHeaderCache.Get(objectHandle.ObjectName())
+	maybeAttrs, hit := objectMetadataCache.Get(objectHandle.ObjectName())
 	if hit {
 		objectAttrs = maybeAttrs.(*storage.ObjectAttrs)
 	} else {
@@ -77,7 +84,7 @@ func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
 				expiry = time.Second * time.Duration(ccSecs)
 			}
 		}
-		contentHeaderCache.Set(objectHandle.ObjectName(), objectAttrs, expiry)
+		objectMetadataCache.Set(objectHandle.ObjectName(), objectAttrs, expiry)
 	}
 	return
 }
