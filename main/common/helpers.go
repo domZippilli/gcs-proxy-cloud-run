@@ -11,14 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-module github.com/DomZippilli/gcs-proxy-cloud-function
+package common
 
-go 1.16
-
-require (
-	cloud.google.com/go v0.75.0
-	cloud.google.com/go/storage v1.14.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rs/zerolog v1.21.0
-	golang.org/x/text v0.3.4
-)
+// convertURLtoObject converts a URL to an appropriate object path. This also
+// includes redirecting root requests "/" to index.html.
+func ConvertURLtoObject(url string) (object string) {
+	switch url {
+	case "/":
+		return "index.html"
+	default:
+		return url[1:]
+	}
+}

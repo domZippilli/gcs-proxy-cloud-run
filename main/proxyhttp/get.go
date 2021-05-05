@@ -16,19 +16,20 @@ package proxyhttp
 import (
 	"context"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
 	"github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
 
 	storage "cloud.google.com/go/storage"
+	"github.com/rs/zerolog/log"
 )
 
 // get handles GET requests.
 func get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
-	// Do the request to get response content stream
-	objectName := convertURLtoObject(request.URL.String())
+	// identify the object path
+	objectName := common.ConvertURLtoObject(request.URL.String())
+	// Do the request to get object media stream
 	objectHandle := common.GCS.Bucket(common.BUCKET).Object(objectName)
 
 	// get static-serving metadata and set headers
@@ -38,14 +39,14 @@ func get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 			http.Error(response, "404 - Not Found", http.StatusNotFound)
 			return
 		} else {
-			log.Fatal(err)
+			log.Fatal().Msgf("get: %v", err)
 		}
 	}
 
 	// get object content and send it
 	objectContent, err := objectHandle.NewReader(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Msgf("get: %v", err)
 	}
 	defer objectContent.Close()
 	if len(filters) > 0 {
@@ -56,18 +57,7 @@ func get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 		_, err = io.Copy(response, objectContent)
 	}
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Msgf("get: %v", err)
 	}
 	return
-}
-
-// convertURLtoObject converts a URL to an appropriate object path. This also
-// includes redirecting root requests "/" to index.html.
-func convertURLtoObject(url string) (object string) {
-	switch url {
-	case "/":
-		return "index.html"
-	default:
-		return url[1:]
-	}
 }
