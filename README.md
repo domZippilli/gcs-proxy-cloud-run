@@ -28,7 +28,7 @@ Service URL: https://gcs-mybucket-urqwoijds-uc.a.run.app
 
 This is the location where you can access the proxy.
 
-The default configuration makes a simple public endpoint for the proxy. Users would do well to tune the runtime settings for the service to suit their needs.
+The default configuration makes a simple, read-only public endpoint with the proxy backed by the given GCS bucket. Users would do well to tune the runtime settings for the service to suit their needs.
 
 ## Configuration
 
@@ -39,7 +39,7 @@ HTTP methods have a configuration function like this:
 ```go
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	get(ctx, output, input, []filter.MediaFilter{})
+    get(ctx, output, input, []filter.MediaFilter{})
 }
 ```
 
@@ -54,9 +54,9 @@ The fourth argument to `get` above is a slice of `main/filter/MediaFilter`. **Me
 ```go
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	get(ctx, output, input, []filter.MediaFilter{
-		filter.LowerFilter,
-	})
+    get(ctx, output, input, []filter.MediaFilter{
+        filter.LowerFilter,
+    })
 }
 ```
 
