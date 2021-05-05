@@ -18,26 +18,23 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
+
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/proxyhttp"
 
 	storage "cloud.google.com/go/storage"
-	cache "github.com/patrickmn/go-cache"
 )
-
-var BUCKET string
-var GCS *storage.Client
-var contentHeaderCache = cache.New(90*time.Second, 10*time.Minute)
 
 func setup() {
 	// set the bucket name from environment variable
-	BUCKET = os.Getenv("BUCKET_NAME")
+	common.BUCKET = os.Getenv("BUCKET_NAME")
 
 	// initialize the client
 	c, err := storage.NewClient(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
-	GCS = c
+	common.GCS = c
 }
 
 func main() {
@@ -67,7 +64,7 @@ func ProxyGCS(output http.ResponseWriter, input *http.Request) {
 	// ===> Your filters go below here <===
 	switch input.Method {
 	case http.MethodGet:
-		get(ctx, output, input, []MediaFilter{})
+		proxyhttp.GET(ctx, output, input)
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}
