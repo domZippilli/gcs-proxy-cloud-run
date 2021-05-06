@@ -23,7 +23,9 @@ import (
 
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	gcs.Get(ctx, output, input, []filter.MediaFilter{})
+	gcs.Get(ctx, output, input, []filter.MediaFilter{
+		filter.LogRequest,
+	})
 }
 
 // func HEAD
