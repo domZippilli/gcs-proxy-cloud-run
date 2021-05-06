@@ -33,7 +33,7 @@ RUN go mod download
 COPY . .
 
 # Build the binary.
-RUN go build -mod=readonly -v -o /bin/server ./main
+RUN go build -mod=readonly -v -o /bin/server .
 
 # Use the official Debian slim image for a lean production container.
 # https://hub.docker.com/_/debian

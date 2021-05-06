@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/config"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 

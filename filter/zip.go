@@ -21,7 +21,7 @@ import (
 	"io"
 	"path"
 
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
 )
 
 // ZipFilter compresses the media to a zip file with a single file inside.

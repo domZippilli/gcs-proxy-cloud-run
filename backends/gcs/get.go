@@ -11,21 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package proxyhttp
+package gcs
 
 import (
 	"context"
 	"io"
 	"net/http"
 
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/filter"
 
 	storage "cloud.google.com/go/storage"
 	"github.com/rs/zerolog/log"
 )
 
-// get handles GET requests.
+// Get returns objects from a GCS bucket, mapping the URL to object names.
 func Get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
 	// identify the object path
 	objectName := common.ConvertURLtoObject(request.URL.String())

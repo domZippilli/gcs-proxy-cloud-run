@@ -62,19 +62,21 @@ func LowerFilter(ctx context.Context, handle MediaFilterHandle) error {
 func IntercalateFilter(ctx context.Context, handle MediaFilterHandle, separator string, insertValue string) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
-
+	// load the media into memory
 	media := new(bytes.Buffer)
 	io.Copy(media, handle.input)
+	// make it a string
 	mediaString := media.String()
-	tokens := strings.Split(mediaString, separator)
-	outputLines := []string{}
-	for i, token := range tokens {
-		outputLines = append(outputLines, token)
-		if i <= len(tokens)-2 {
-			outputLines = append(outputLines, separator+insertValue)
+	// split and intercalate
+	inputStrings := strings.Split(mediaString, separator)
+	outputStrings := []string{}
+	for i, token := range inputStrings {
+		outputStrings = append(outputStrings, token)
+		if i <= len(inputStrings)-2 {
+			outputStrings = append(outputStrings, separator+insertValue)
 		}
 	}
-	for _, line := range outputLines {
+	for _, line := range outputStrings {
 		handle.output.Write([]byte(string(line)))
 	}
 	return nil

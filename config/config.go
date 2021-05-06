@@ -17,13 +17,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/proxyhttp"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/backends/gcs"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/filter"
 )
 
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	proxyhttp.Get(ctx, output, input, []filter.MediaFilter{})
+	gcs.Get(ctx, output, input, []filter.MediaFilter{})
 }
 
 // func HEAD
