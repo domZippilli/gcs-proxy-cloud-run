@@ -26,7 +26,7 @@ func LogRequest(ctx context.Context, handle MediaFilterHandle) error {
 	defer handle.output.Close()
 	bytesSent, err := io.Copy(handle.output, handle.input)
 	if err == nil {
-		log.Info().Msgf("Request from %v: %v %v %vB",
+		log.Info().Msgf("Request from %v %v %v %vB",
 			handle.request.RemoteAddr,
 			handle.request.Method,
 			handle.request.URL,

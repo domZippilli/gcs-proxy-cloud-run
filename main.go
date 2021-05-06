@@ -27,9 +27,6 @@ import (
 )
 
 func setup() {
-	// configure logger
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-
 	// set the bucket name from environment variable
 	common.BUCKET = os.Getenv("BUCKET_NAME")
 
@@ -42,6 +39,9 @@ func setup() {
 }
 
 func main() {
+	// pretty print console log
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	// initialize
 	log.Print("starting server...")
 	setup()
 	http.HandleFunc("/", ProxyHTTPGCS)
