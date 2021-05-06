@@ -11,18 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package proxyhttp
+package config
 
 import (
 	"context"
 	"net/http"
 
-	filter "github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/filter"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/proxyhttp"
 )
 
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	get(ctx, output, input, []filter.MediaFilter{})
+	proxyhttp.Get(ctx, output, input, []filter.MediaFilter{})
 }
 
 // func HEAD

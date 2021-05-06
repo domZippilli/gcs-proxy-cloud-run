@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
-	"github.com/DomZippilli/gcs-proxy-cloud-function/main/proxyhttp"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/main/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -68,7 +68,7 @@ func ProxyHTTPGCS(output http.ResponseWriter, input *http.Request) {
 	// ===> Your filters go below here <===
 	switch input.Method {
 	case http.MethodGet:
-		proxyhttp.GET(ctx, output, input)
+		config.GET(ctx, output, input)
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}

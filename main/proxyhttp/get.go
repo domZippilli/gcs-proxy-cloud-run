@@ -26,7 +26,7 @@ import (
 )
 
 // get handles GET requests.
-func get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
+func Get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
 	// identify the object path
 	objectName := common.ConvertURLtoObject(request.URL.String())
 	// Do the request to get object media stream

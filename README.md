@@ -32,29 +32,29 @@ The default configuration makes a simple, read-only public endpoint with the pro
 
 ## Configuration
 
-Configuration for the HTTP behavior of the proxy is encoded in `main/proxyhttp/config.go`. Rather than using a separate config file, the configuration can be expressed in simple Go code and then compiled into the service and deployed.
+Configuration for the HTTP behavior of the proxy is encoded in `main/config/config.go`. Rather than using a separate config file, the configuration can be expressed in simple Go code and then compiled into the service and deployed.
 
 HTTP methods have a configuration function like this:
 
 ```go
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-    get(ctx, output, input, []filter.MediaFilter{})
+    proxyhttp.Get(ctx, output, input, []filter.MediaFilter{})
 }
 ```
 
 In this case, `GET` is the function you configure; you can do all kinds of pre-processing like examining or rewriting request headers, etc. Then, `get` is the standard `proxyhttp/get.go` implementation which reads objects from GCS.
 
-This configuration is referred to from `main/main.go` at the entrypoint for the function. In general, the idea is to keep that file pretty static and open ended, and push most customization into `proxyhttp/config.go`.
+This configuration is referred to from `main/main.go` at the entrypoint for the function. In general, the idea is to keep that file pretty static and open ended, and push most customization into `config/config.go`.
 
 ## Media Filters
 
-The fourth argument to `get` above is a slice of `main/filter/MediaFilter`. **Media filters allow you to execute arbitrary Go code against the media of requests**. A number of example and possibly useful filters can be found in `main/filter/filter.go`. Inserting filters into the processing of a response is simple; just add them to the slice in `proxyhttp/config.go`:
+The fourth argument to `get` above is a slice of `main/filter/MediaFilter`. **Media filters allow you to execute arbitrary Go code against the media of requests**. A number of example and possibly useful filters can be found in `main/filter/filter.go`. Inserting filters into the processing of a response is simple; just add them to the slice in `config/config.go`:
 
 ```go
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-    get(ctx, output, input, []filter.MediaFilter{
+    proxyhttp.Get(ctx, output, input, []filter.MediaFilter{
         filter.LowerFilter,
     })
 }
