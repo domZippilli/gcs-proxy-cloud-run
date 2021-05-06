@@ -64,17 +64,7 @@ func IntercalateFilter(ctx context.Context, handle MediaFilterHandle, separator 
 	defer handle.output.Close()
 
 	media := new(bytes.Buffer)
-	buf := make([]byte, 4096)
-	for {
-		_, err := handle.input.Read(buf)
-		buf = bytes.ToLower(buf)
-		media.Write(buf)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return fmt.Errorf("intercalate filter: %v", err)
-		}
-	}
+	io.Copy(media, handle.input)
 	mediaString := media.String()
 	tokens := strings.Split(mediaString, separator)
 	outputLines := []string{}
@@ -117,17 +107,7 @@ func TranslateFilter(ctx context.Context, handle MediaFilterHandle,
 
 	// read the content into a string
 	media := new(bytes.Buffer)
-	buf := make([]byte, 4096)
-	for {
-		_, err := handle.input.Read(buf)
-		buf = bytes.ToLower(buf)
-		media.Write(buf)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return fmt.Errorf("translate filter: %v", err)
-		}
-	}
+	io.Copy(media, handle.input)
 	mediaString := media.String()
 
 	// get the translation
