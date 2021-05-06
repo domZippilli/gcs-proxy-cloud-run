@@ -15,6 +15,7 @@ package filter
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/rs/zerolog/log"
@@ -25,12 +26,13 @@ func LogRequest(ctx context.Context, handle MediaFilterHandle) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
 	bytesSent, err := io.Copy(handle.output, handle.input)
-	if err == nil {
-		log.Info().Msgf("Request from %v %v %v %vB",
-			handle.request.RemoteAddr,
-			handle.request.Method,
-			handle.request.URL,
-			bytesSent)
+	if err != nil {
+		return fmt.Errorf("logrequest filter: %v", err)
 	}
+	log.Info().Msgf("Request from %v %v %v %vB",
+		handle.request.RemoteAddr,
+		handle.request.Method,
+		handle.request.URL,
+		bytesSent)
 	return err
 }
