@@ -15,24 +15,28 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/main/common"
 	"github.com/DomZippilli/gcs-proxy-cloud-function/main/proxyhttp"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	storage "cloud.google.com/go/storage"
 )
 
 func setup() {
+	// configure logger
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	// set the bucket name from environment variable
 	common.BUCKET = os.Getenv("BUCKET_NAME")
 
 	// initialize the client
 	c, err := storage.NewClient(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Msgf("main: %v", err)
 	}
 	common.GCS = c
 }
@@ -40,25 +44,25 @@ func setup() {
 func main() {
 	log.Print("starting server...")
 	setup()
-	http.HandleFunc("/", ProxyGCS)
+	http.HandleFunc("/", ProxyHTTPGCS)
 
 	// Determine port for HTTP service.
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
-		log.Printf("defaulting to port %s", port)
+		log.Warn().Msgf("defaulting to port %s", port)
 	}
 
 	// Start HTTP server.
 	log.Printf("listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
+		log.Fatal().Msgf("main: %v", err)
 	}
 }
 
-// ProxyGCS is the entry point for the cloud function, providing a proxy that
+// ProxyHTTPGCS is the entry point for the cloud function, providing a proxy that
 // permits HTTP protocol usage of a GCS bucket's contents.
-func ProxyGCS(output http.ResponseWriter, input *http.Request) {
+func ProxyHTTPGCS(output http.ResponseWriter, input *http.Request) {
 	ctx := context.Background()
 	// route HTTP methods to appropriate handlers.
 	// ===> Your filters go below here <===

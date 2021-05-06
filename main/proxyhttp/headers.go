@@ -16,7 +16,6 @@ package proxyhttp
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,6 +23,7 @@ import (
 
 	storage "cloud.google.com/go/storage"
 	cache "github.com/patrickmn/go-cache"
+	"github.com/rs/zerolog/log"
 )
 
 // objectMetadataCache stores object metadata to speed up serving of data.
@@ -79,7 +79,7 @@ func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
 			strings.HasPrefix(cacheControl, "max-age") {
 			ccSecs, err := strconv.Atoi(strings.Split(cacheControl, "=")[1])
 			if err != nil {
-				log.Println(err)
+				log.Fatal().Msgf("headers: %v", err)
 			} else {
 				expiry = time.Second * time.Duration(ccSecs)
 			}
