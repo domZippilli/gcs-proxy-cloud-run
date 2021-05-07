@@ -15,12 +15,18 @@ package filter
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 // MediaFilter functions can transform bytes from input to output.
 type MediaFilter func(context.Context, MediaFilterHandle) error
+
+// Pipeline is just a slice of MediaFilters. This alias is just here for semantics.
+type Pipeline []MediaFilter
 
 // MediaFilterHandle is a pair of input and output for the filter to read and write.
 // Request and response are also included in case the filter needs to refer to
@@ -32,8 +38,8 @@ type MediaFilterHandle struct {
 	response http.ResponseWriter
 }
 
-// Performs a copy to response with filters applied to the input.
-func FilteredResponse(ctx context.Context, response http.ResponseWriter, input io.Reader, request *http.Request, filters []MediaFilter) (int64, error) {
+// Performs a copy of input to response, with filters applied to the input.
+func PipelineCopy(ctx context.Context, response http.ResponseWriter, input io.Reader, request *http.Request, pipeline Pipeline) (int64, error) {
 	inputReader, inputWriter := io.Pipe()
 	// prime the pump by writing the input to the first pipe
 	go func() {
@@ -42,7 +48,7 @@ func FilteredResponse(ctx context.Context, response http.ResponseWriter, input i
 	}()
 	// variable for last pipe's reader (output) in outer scope
 	var lastFilterReader *io.PipeReader
-	for i, filter := range filters {
+	for i, filter := range pipeline {
 		// make a new pipe
 		filterReader, filterWriter := io.Pipe()
 		// decide whether to read from input, or the last filter
@@ -65,10 +71,29 @@ func FilteredResponse(ctx context.Context, response http.ResponseWriter, input i
 	return io.Copy(response, lastFilterReader)
 }
 
-// NoOpFilter does nothing to the media.
-func NoOpFilter(ctx context.Context, handle MediaFilterHandle) error {
+// NoOp does nothing to the media.
+func NoOp(ctx context.Context, handle MediaFilterHandle) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
-	_, err := io.Copy(handle.output, handle.input)
+	if _, err := io.Copy(handle.output, handle.input); err != nil {
+		return fmt.Errorf("myfilter: %v", err)
+	}
+	return nil
+}
+
+// FilterIf will apply a filter if condition() == true; otherwise, it will apply NoOp.
+func FilterIf(ctx context.Context, handle MediaFilterHandle,
+	condition func(http.Request) bool, filter MediaFilter) error {
+	if condition(*handle.request) {
+		return filter(ctx, handle)
+	}
+	return NoOp(ctx, handle)
+}
+
+// FilterError is the preferred way to return errors from filters.
+func FilterError(handle MediaFilterHandle, statusCode int, msg string, v ...interface{}) error {
+	err := fmt.Errorf(msg, v...)
+	log.Error().Msgf("filter error! %v", err)
+	http.Error(handle.response, http.StatusText(statusCode), statusCode)
 	return err
 }

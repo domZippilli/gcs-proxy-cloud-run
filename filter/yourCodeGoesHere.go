@@ -16,12 +16,15 @@ package filter
 import (
 	"context"
 	"io"
+	"net/http"
 )
 
 // MyFilter is a place to put your code.
 func MyFilter(ctx context.Context, handle MediaFilterHandle) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
-	_, err := io.Copy(handle.output, handle.input)
-	return err
+	if _, err := io.Copy(handle.output, handle.input); err != nil {
+		return FilterError(handle, http.StatusInternalServerError, "myfilter: %v", err)
+	}
+	return nil
 }

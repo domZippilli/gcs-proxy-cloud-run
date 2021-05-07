@@ -13,6 +13,12 @@
 // limitations under the License.
 package common
 
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
+
 // convertURLtoObject converts a URL to an appropriate object path. This also
 // includes redirecting root requests "/" to index.html.
 func ConvertURLtoObject(url string) (object string) {
@@ -22,4 +28,28 @@ func ConvertURLtoObject(url string) (object string) {
 	default:
 		return url[1:]
 	}
+}
+
+func GetRuntimeProjectId() (string, error) {
+	// Define the metadata request.
+	client := &http.Client{}
+	req, err := http.NewRequest("GET",
+		"http://metadata.google.internal/computeMetadata/v1/project/project-id",
+		nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Metadata-Flavor", "Google")
+	// Make the request.
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	// Read the response and return it.
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("get project id: %v", string(bodyBytes))
+	}
+	return string(bodyBytes), nil
 }
