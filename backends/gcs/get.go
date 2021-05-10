@@ -26,7 +26,7 @@ import (
 )
 
 // Get returns objects from a GCS bucket, mapping the URL to object names.
-func Get(ctx context.Context, response http.ResponseWriter, request *http.Request, filters []filter.MediaFilter) {
+func Get(ctx context.Context, response http.ResponseWriter, request *http.Request, pipeline filter.Pipeline) {
 	// identify the object path
 	objectName := common.ConvertURLtoObject(request.URL.String())
 	// Do the request to get object media stream
@@ -36,28 +36,28 @@ func Get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 	err := setHeaders(ctx, objectHandle, response)
 	if err != nil {
 		if err == storage.ErrObjectNotExist {
-			http.Error(response, "404 - Not Found", http.StatusNotFound)
+			http.Error(response, "", http.StatusNotFound)
 			return
 		} else {
-			log.Fatal().Msgf("get: %v", err)
+			log.Error().Msgf("get: %v", err)
 		}
 	}
 
 	// get object content and send it
 	objectContent, err := objectHandle.NewReader(ctx)
 	if err != nil {
-		log.Fatal().Msgf("get: %v", err)
+		log.Error().Msgf("get: %v", err)
 	}
 	defer objectContent.Close()
-	if len(filters) > 0 {
-		// apply filter chain
-		_, err = filter.FilteredResponse(ctx, response, objectContent, request, filters)
+	if len(pipeline) > 0 {
+		// use a filter pipeline
+		_, err = filter.PipelineCopy(ctx, response, objectContent, request, pipeline)
 	} else {
 		// unfiltered, simple copy
 		_, err = io.Copy(response, objectContent)
 	}
 	if err != nil {
-		log.Fatal().Msgf("get: %v", err)
+		log.Error().Msgf("get: %v", err)
 	}
 	return
 }
