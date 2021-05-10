@@ -30,7 +30,7 @@ func Get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 	// identify the object path
 	objectName := common.ConvertURLtoObject(request.URL.String())
 	// Do the request to get object media stream
-	objectHandle := common.GCS.Bucket(common.BUCKET).Object(objectName)
+	objectHandle := gcs.Bucket(bucket).Object(objectName)
 
 	// get static-serving metadata and set headers
 	err := setHeaders(ctx, objectHandle, response)

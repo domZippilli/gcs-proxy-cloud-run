@@ -18,32 +18,16 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
 	"github.com/DomZippilli/gcs-proxy-cloud-function/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
-	storage "cloud.google.com/go/storage"
 )
-
-func setup() {
-	// set the bucket name from environment variable
-	common.BUCKET = os.Getenv("BUCKET_NAME")
-
-	// initialize the client
-	c, err := storage.NewClient(context.Background())
-	if err != nil {
-		log.Fatal().Msgf("main: %v", err)
-	}
-	common.GCS = c
-}
 
 func main() {
 	// pretty print console log
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	// initialize
 	log.Print("starting server...")
-	setup()
 	http.HandleFunc("/", ProxyHTTPGCS)
 
 	// Determine port for HTTP service.
@@ -51,6 +35,11 @@ func main() {
 	if port == "" {
 		port = "8080"
 		log.Warn().Msgf("defaulting to port %s", port)
+	}
+
+	// Initialize
+	if err := config.Setup(); err != nil {
+		log.Fatal().Msgf("main setup: %v", err)
 	}
 
 	// Start HTTP server.

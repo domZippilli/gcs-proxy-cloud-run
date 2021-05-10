@@ -21,6 +21,11 @@ import (
 	"github.com/DomZippilli/gcs-proxy-cloud-function/filter"
 )
 
+// This function will be called once at the start of the program.
+func Setup() error {
+	return gcs.Setup()
+}
+
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
 	gcs.Get(ctx, output, input, []filter.MediaFilter{

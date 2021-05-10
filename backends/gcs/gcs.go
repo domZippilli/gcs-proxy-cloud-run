@@ -11,13 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// common contains shared state
-package common
+package gcs
 
 import (
+	"context"
+	"os"
+
 	storage "cloud.google.com/go/storage"
 )
 
-var BUCKET string
-var GCS *storage.Client
+var bucket string
+var gcs *storage.Client
+
+// setup performs one-time setup for the GCS backend.
+func Setup() error {
+	// set the bucket name from environment variable
+	bucket = os.Getenv("BUCKET_NAME")
+
+	// initialize the client
+	var err error
+	gcs, err = storage.NewClient(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
