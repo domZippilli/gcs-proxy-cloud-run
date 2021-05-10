@@ -16,19 +16,16 @@ package filter
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
+	"net/http"
 	"strings"
-
-	"cloud.google.com/go/translate"
-	"golang.org/x/text/language"
 )
 
-// LowerFilter applies bytes.ToLower to the media.
+// ToLower applies bytes.ToLower to the media.
 //
 // This is an example of a streaming filter. This will use very little memory
 // and add very little latency to responses.
-func LowerFilter(ctx context.Context, handle MediaFilterHandle) error {
+func ToLower(ctx context.Context, handle MediaFilterHandle) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
 	buf := make([]byte, 4096)
@@ -39,13 +36,13 @@ func LowerFilter(ctx context.Context, handle MediaFilterHandle) error {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return fmt.Errorf("lower filter: %v", err)
+			return FilterError(handle, http.StatusInternalServerError, "lower filter: %v", err)
 		}
 	}
 	return nil
 }
 
-// IntercalateFilter will split the media, insert a value between elements,
+// Intercalate will split the media, insert a value between elements,
 // and return the concatenated result.
 //
 // This function should be called from a lambda that applies desired values for
@@ -53,18 +50,20 @@ func LowerFilter(ctx context.Context, handle MediaFilterHandle) error {
 //
 // For example:
 //   func(ctx context.Context, handle MediaFilterHandle) error {
-//   	return IntercalateFilter(ctx, handle, "\n", "f")
+//   	return Intercalate(ctx, handle, "\n", "f")
 //   },
 //
 // This is an example of a store-and-forward filter, in that it loads the
 // entire response to perform its transformation, so it will use memory at least
 // equal to the source, and add its processing time to latency.
-func IntercalateFilter(ctx context.Context, handle MediaFilterHandle, separator string, insertValue string) error {
+func Intercalate(ctx context.Context, handle MediaFilterHandle, separator string, insertValue string) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
 	// load the media into memory
 	media := new(bytes.Buffer)
-	io.Copy(media, handle.input)
+	if _, err := io.Copy(media, handle.input); err != nil {
+		return FilterError(handle, http.StatusInternalServerError, "intercalate filter: %v", err)
+	}
 	// make it a string
 	mediaString := media.String()
 	// split and intercalate
@@ -78,54 +77,6 @@ func IntercalateFilter(ctx context.Context, handle MediaFilterHandle, separator 
 	}
 	for _, line := range outputStrings {
 		handle.output.Write([]byte(string(line)))
-	}
-	return nil
-}
-
-// DO NOT USE -- Broken.
-// TranslateFilter translates the media from one language to another.
-//
-// This function should be called from a lambda that applies desired values for
-// translation, leaving only ctx and handle for use as a MediaFilter.
-//
-// For example:
-//   func(ctx context.Context, handle MediaFilterHandle) error {
-//   	return TranslateFilter(ctx, handle, language.English, language.Spanish, translate.HTML)
-//   },
-//
-// This is an example of a store-and-forward filter, in that it loads the
-// entire response to perform its transformation, so it will use memory at least
-// equal to the source, and add its processing time to latency.
-func TranslateFilter(ctx context.Context, handle MediaFilterHandle,
-	fromLang language.Tag, toLang language.Tag, format translate.Format) error {
-	defer handle.input.Close()
-	defer handle.output.Close()
-
-	// get Translate client
-	translateClient, err := translate.NewClient(ctx)
-	if err != nil {
-		return fmt.Errorf("translate filter: %v", err)
-	}
-
-	// read the content into a string
-	media := new(bytes.Buffer)
-	io.Copy(media, handle.input)
-	mediaString := media.String()
-
-	// get the translation
-	// TODO(domz): POST instead of GET?
-	translations, err := translateClient.Translate(ctx, []string{mediaString}, toLang,
-		&translate.Options{
-			Source: fromLang,
-			Format: format,
-		})
-	if err != nil {
-		return fmt.Errorf("translate filter: %v", err)
-	}
-
-	// write the translation
-	for _, t := range translations {
-		handle.output.Write([]byte(t.Text))
 	}
 	return nil
 }
