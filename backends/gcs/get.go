@@ -14,6 +14,7 @@
 package gcs
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -26,12 +27,37 @@ import (
 )
 
 // Get returns objects from a GCS bucket, mapping the URL to object names.
-func Get(ctx context.Context, response http.ResponseWriter, request *http.Request, pipeline filter.Pipeline) {
-	// identify the object path
-	objectName := common.ConvertURLtoObject(request.URL.String())
-	// Do the request to get object media stream
-	objectHandle := gcs.Bucket(bucket).Object(objectName)
+// Media caching is bypassed.
+func Get(ctx context.Context, response http.ResponseWriter,
+	request *http.Request, pipeline filter.Pipeline) {
+	noCache := func(s string) ([]byte, bool) {
+		return nil, false
+	}
+	GetWithCache(ctx, response, request, pipeline, noCache, filter.Pipeline{})
+}
 
+// CacheGet defines how CachedGet will try to get media from the cache.
+type CacheGet func(string) ([]byte, bool)
+
+// GetWithCache returns objects from a GCS bucket, mapping the URL to object names.
+// Cached media may be served, sparing a trip to GCS.
+//
+// Filters in missPipeline will be applied on cache misses. A cache fill
+// filter is a good idea here.
+//
+// Filters in hitPipeline will be applied on cache hits. Reducing the pipeline
+// to not repeat steps done on fill (e.g., compression, transcoding) is a good
+// idea here.
+func GetWithCache(ctx context.Context, response http.ResponseWriter,
+	request *http.Request, missPipeline filter.Pipeline, cacheGet CacheGet,
+	hitPipeline filter.Pipeline) {
+	// normalize path
+	objectName := common.NormalizeURL(request.URL.String())
+
+	// get the object handle and headers. Headers are always cached and obey
+	// Cache-Control header, so this will not call GCS unless there's a miss.
+	// In general, header hits and media hits should line up.
+	objectHandle := gcs.Bucket(bucket).Object(objectName)
 	// get static-serving metadata and set headers
 	err := setHeaders(ctx, objectHandle, response)
 	if err != nil {
@@ -43,18 +69,33 @@ func Get(ctx context.Context, response http.ResponseWriter, request *http.Reques
 		}
 	}
 
-	// get object content and send it
-	objectContent, err := objectHandle.NewReader(ctx)
-	if err != nil {
-		log.Error().Msgf("get: %v", err)
+	// try the media cache
+	var media io.Reader
+	var pipeline filter.Pipeline
+	maybeMedia, hit := cacheGet(objectName)
+	if hit {
+		log.Debug().Msgf("gcs getwithcache: HIT")
+		media = bytes.NewReader(maybeMedia)
+		pipeline = hitPipeline
+	} else {
+		log.Debug().Msgf("gcs getwithcache: MISS")
+		// get object content and send it
+		objectContent, err := objectHandle.NewReader(ctx)
+		if err != nil {
+			log.Error().Msgf("get: %v", err)
+		}
+		defer objectContent.Close()
+		media = objectContent
+		pipeline = missPipeline
 	}
-	defer objectContent.Close()
+
+	// serve the media
 	if len(pipeline) > 0 {
 		// use a filter pipeline
-		_, err = filter.PipelineCopy(ctx, response, objectContent, request, pipeline)
+		_, err = filter.PipelineCopy(ctx, response, media, request, pipeline)
 	} else {
 		// unfiltered, simple copy
-		_, err = io.Copy(response, objectContent)
+		_, err = io.Copy(response, media)
 	}
 	if err != nil {
 		log.Error().Msgf("get: %v", err)

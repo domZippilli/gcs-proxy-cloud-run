@@ -19,9 +19,9 @@ import (
 	"net/http"
 )
 
-// convertURLtoObject converts a URL to an appropriate object path. This also
-// includes redirecting root requests "/" to index.html.
-func ConvertURLtoObject(url string) (object string) {
+// NormalizeURL removes the leading slash from URLs, and also
+// redirects root requests "/" to index.html.
+func NormalizeURL(url string) (object string) {
 	switch url {
 	case "/":
 		return "index.html"
