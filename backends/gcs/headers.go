@@ -29,6 +29,7 @@ import (
 // objectMetadataCache stores object metadata to speed up serving of data.
 // The data itself is not cached, just values like Content-Type, Cache-Control,
 // etc.
+// TODO(domz): Small data, but still, need memory bounds.
 var objectMetadataCache = cache.New(90*time.Second, 10*time.Minute)
 
 // setHeaders will transfer HTTP headers from GCS metadata to the response.

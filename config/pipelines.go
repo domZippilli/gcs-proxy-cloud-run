@@ -18,8 +18,11 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
 	"github.com/DomZippilli/gcs-proxy-cloud-function/filter"
+	gocache "github.com/patrickmn/go-cache"
 	"golang.org/x/text/language"
 )
 
@@ -27,6 +30,9 @@ import (
 var LoggingOnly = filter.Pipeline{
 	filter.LogRequest,
 }
+
+// EXAMPLE: No funny stuff.
+var NoFilters = filter.Pipeline{}
 
 // EXAMPLE: Send everything compressed.
 var ZippingProxy = filter.Pipeline{
@@ -56,7 +62,7 @@ func englishToSpanish(c context.Context, mfh filter.MediaFilterHandle) error {
 // isHTML tests whether a file ends with "html".
 func isHTML(r http.Request) bool {
 	url := r.URL.String()
-	return url == "/" || strings.HasSuffix(url, "html")
+	return strings.HasSuffix(common.NormalizeURL(url), "html")
 }
 
 // EXAMPLE: Block any SSNs.
@@ -72,4 +78,34 @@ func blockSSNs(c context.Context, mfh filter.MediaFilterHandle) error {
 		regexp.MustCompile("\\b([0-9]{3}-[0-9]{2}-[0-9]{4})\\b"),
 	}
 	return filter.BlockRegex(c, mfh, regexes)
+}
+
+// EXAMPLE: Cache media in the proxy's memory.
+var CacheMedia = filter.Pipeline{
+	cacheMedia,
+	filter.LogRequest,
+}
+
+// mediaCache is a cache for media.
+// TODO(domz): Gonna need some memory bounds here.
+var mediaCache = gocache.New(5*time.Minute, 10*time.Minute)
+
+// cacheSetter matches the filter.CacheSet type.
+func cacheSetter(k string, b []byte, d time.Duration) {
+	mediaCache.Set(k, b, d)
+}
+
+// cacheSetter matches the gcs.CacheGet type.
+// Basically, we have to deal with the conversion from ifc/nil to []byte here.
+func cacheGetter(k string) ([]byte, bool) {
+	ifc, hit := mediaCache.Get(k)
+	if hit {
+		return ifc.([]byte), true
+	}
+	return []byte{}, false
+}
+
+// cacheMedia applies mediaCache to the FillCache filter.
+func cacheMedia(c context.Context, mfh filter.MediaFilterHandle) error {
+	return filter.FillCache(c, mfh, cacheSetter)
 }
