@@ -16,6 +16,7 @@ package gcs
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -76,6 +77,8 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	if hit {
 		log.Debug().Msgf("gcs getwithcache: HIT")
 		media = bytes.NewReader(maybeMedia)
+		// transformations may be cached; use cached content length
+		response.Header().Set("Content-Length", fmt.Sprint(len(maybeMedia)))
 		pipeline = hitPipeline
 	} else {
 		log.Debug().Msgf("gcs getwithcache: MISS")
