@@ -27,8 +27,8 @@ func Setup() error {
 
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	//gcs.Get(ctx, output, input, LoggingOnly)
-	gcs.GetWithCache(ctx, output, input, CacheMedia, cacheGetter, LoggingOnly)
+	gcs.Get(ctx, output, input, LoggingOnly)
+	//gcs.GetWithCache(ctx, output, input, CacheMedia, cacheGetter, LoggingOnly)
 }
 
 // func HEAD

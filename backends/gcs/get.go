@@ -80,6 +80,7 @@ func GetWithCache(ctx context.Context, response http.ResponseWriter,
 	} else {
 		log.Debug().Msgf("gcs getwithcache: MISS")
 		// get object content and send it
+		// TODO(domz): need an aggressive reader
 		objectContent, err := objectHandle.NewReader(ctx)
 		if err != nil {
 			log.Error().Msgf("get: %v", err)
