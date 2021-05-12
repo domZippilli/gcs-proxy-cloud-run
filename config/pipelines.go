@@ -34,6 +34,12 @@ var LoggingOnly = filter.Pipeline{
 // EXAMPLE: No funny stuff.
 var NoFilters = filter.Pipeline{}
 
+// EXAMPLE: Send everything lowercase. Undefined behavior with binaries.
+var LowercasingProxy = filter.Pipeline{
+	filter.ToLower,
+	filter.LogRequest,
+}
+
 // EXAMPLE: Send everything compressed.
 var ZippingProxy = filter.Pipeline{
 	filter.GZip,
