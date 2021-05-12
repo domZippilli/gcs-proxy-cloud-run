@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/backends/gcs"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/filter"
 )
 
 // This function will be called once at the start of the program.
@@ -27,8 +28,12 @@ func Setup() error {
 
 // This function will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
-	gcs.Read(ctx, output, input, LoggingOnly)
-	//gcs.GetWithCache(ctx, output, input, CacheMedia, cacheGetter, LoggingOnly)
+	//gcs.Read(ctx, output, input, LoggingOnly)
+	gcs.ReadWithCache(ctx, output, input, filter.Pipeline{
+		htmlEnglishToSpanish,
+		cacheMedia,
+		filter.LogRequest,
+	}, cacheGetter, LoggingOnly)
 }
 
 // func HEAD
