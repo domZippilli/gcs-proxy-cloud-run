@@ -26,20 +26,20 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Get returns objects from a GCS bucket, mapping the URL to object names.
+// Read returns objects from a GCS bucket, mapping the URL to object names.
 // Media caching is bypassed.
-func Get(ctx context.Context, response http.ResponseWriter,
+func Read(ctx context.Context, response http.ResponseWriter,
 	request *http.Request, pipeline filter.Pipeline) {
 	noCache := func(s string) ([]byte, bool) {
 		return nil, false
 	}
-	GetWithCache(ctx, response, request, pipeline, noCache, filter.Pipeline{})
+	ReadWithCache(ctx, response, request, pipeline, noCache, filter.Pipeline{})
 }
 
 // CacheGet defines how CachedGet will try to get media from the cache.
 type CacheGet func(string) ([]byte, bool)
 
-// GetWithCache returns objects from a GCS bucket, mapping the URL to object names.
+// ReadWithCache returns objects from a GCS bucket, mapping the URL to object names.
 // Cached media may be served, sparing a trip to GCS.
 //
 // Filters in missPipeline will be applied on cache misses. A cache fill
@@ -48,7 +48,7 @@ type CacheGet func(string) ([]byte, bool)
 // Filters in hitPipeline will be applied on cache hits. Reducing the pipeline
 // to not repeat steps done on fill (e.g., compression, transcoding) is a good
 // idea here.
-func GetWithCache(ctx context.Context, response http.ResponseWriter,
+func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	request *http.Request, missPipeline filter.Pipeline, cacheGet CacheGet,
 	hitPipeline filter.Pipeline) {
 	// normalize path
