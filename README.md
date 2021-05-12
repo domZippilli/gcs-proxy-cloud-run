@@ -8,6 +8,8 @@ This contrasts with [gcs-proxy-cloud-function](http://github.com/domZippilli/gcs
 
 Note, also, that since this is just a containerized proxy, you can also run it any other way you would run containers, not just in Cloud Run.
 
+**DISCLAIMER:** This code is offered as a proof-of-concept only. It should not be used unmodified in production. Your use of this code is at your own risk. See `LICENSE` for more information.
+
 ## Quickstart Deployment
 
 As a prerequisite, [enable the Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com) for your project.
@@ -67,12 +69,12 @@ Multiple filters can be chained together by adding them to the slice. Filters wi
 For more information, check out the documentation in `main/filter/filter.go`.
 
 
-
 ## Copyright
 
-``` text
-Copyright 2021 Google LLC
+Copyright 2021, Google LLC.
 
+## License Summary (Apache 2.0) 
+``` text
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
