@@ -19,13 +19,10 @@ import (
 	"os"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/config"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	// pretty print console log
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	// initialize
 	log.Print("starting server...")
 	http.HandleFunc("/", ProxyHTTPGCS)
