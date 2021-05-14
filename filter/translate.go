@@ -27,6 +27,19 @@ import (
 	translatepb "google.golang.org/genproto/googleapis/cloud/translate/v3"
 )
 
+var translateClient *translate.TranslationClient
+
+// setup performs one-time setup for the GCS backend.
+func setup(ctx context.Context, handle MediaFilterHandle) error {
+	// get Translate client
+	var err error
+	translateClient, err = translate.NewTranslationClient(ctx)
+	if err != nil {
+		return FilterError(handle, http.StatusInternalServerError, "translate filter: %v", err)
+	}
+	return nil
+}
+
 // Translate translates the media from one language to another.
 //
 // This function should be called from a lambda that applies desired values for
@@ -44,10 +57,9 @@ func Translate(ctx context.Context, handle MediaFilterHandle,
 	fromLang language.Tag, toLang language.Tag) error {
 	defer handle.input.Close()
 	defer handle.output.Close()
-	// get Translate client
-	translateClient, err := translate.NewTranslationClient(ctx)
-	if err != nil {
-		return FilterError(handle, http.StatusInternalServerError, "translate filter: %v", err)
+	// run setup if necessary
+	if translateClient == nil {
+		setup(ctx, handle)
 	}
 	// read the content into a string
 	media := new(bytes.Buffer)
