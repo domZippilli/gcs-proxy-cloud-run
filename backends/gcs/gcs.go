@@ -27,11 +27,14 @@ var gcs *storage.Client
 func Setup() error {
 	// set the bucket name from environment variable
 	bucket = os.Getenv("BUCKET_NAME")
-
-	// initialize the client
+	// initialize the primary client
 	var err error
 	gcs, err = storage.NewClient(context.Background())
 	if err != nil {
+		return err
+	}
+	// initialize the client pool for concurrent downloads
+	if err := initializeClientPool(int(numWorkers)); err != nil {
 		return err
 	}
 	return nil

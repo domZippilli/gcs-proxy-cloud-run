@@ -53,3 +53,30 @@ func GetRuntimeProjectId() (string, error) {
 	}
 	return string(bodyBytes), nil
 }
+
+type ByteCount int
+
+const (
+	KB ByteCount = iota
+	MB ByteCount = iota
+	GB ByteCount = iota
+	TB ByteCount = iota
+	PB ByteCount = iota
+)
+
+// Megabytes takes a number of megabytes, and returns it in bytes.
+func AsBytes(unit ByteCount, quantity int64) int64 {
+	switch unit {
+	case PB:
+		return quantity * 1024 * 1024 * 1024 * 1024 * 1024
+	case TB:
+		return quantity * 1024 * 1024 * 1024 * 1024
+	case GB:
+		return quantity * 1024 * 1024 * 1024
+	case MB:
+		return quantity * 1024 * 1024
+	default:
+		// KB
+		return quantity * 1024
+	}
+}

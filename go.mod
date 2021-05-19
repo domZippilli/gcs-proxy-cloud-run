@@ -20,7 +20,6 @@ require (
 	cloud.google.com/go/storage v1.14.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rs/zerolog v1.21.0
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20210506142907-4a47615972c2
 )

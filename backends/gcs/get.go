@@ -83,12 +83,11 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	} else {
 		log.Debug().Msgf("gcs getwithcache: MISS")
 		// get object content and send it
-		// TODO(domz): need an aggressive reader
-		objectContent, err := objectHandle.NewReader(ctx)
+		objectContent, err := managedDownload(ctx, objectHandle)
+		defer objectContent.Close()
 		if err != nil {
 			log.Error().Msgf("get: %v", err)
 		}
-		defer objectContent.Close()
 		media = objectContent
 		pipeline = missPipeline
 	}
