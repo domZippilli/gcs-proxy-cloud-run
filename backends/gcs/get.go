@@ -53,7 +53,7 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	request *http.Request, missPipeline filter.Pipeline, cacheGet CacheGet,
 	hitPipeline filter.Pipeline) {
 	// normalize path
-	objectName := common.NormalizeURL(request.URL.String())
+	objectName := common.NormalizeURL(request.URL.Path)
 
 	// get the object handle and headers. Headers are always cached and obey
 	// Cache-Control header, so this will not call GCS unless there's a miss.
