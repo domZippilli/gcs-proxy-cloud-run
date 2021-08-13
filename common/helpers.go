@@ -17,17 +17,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+    "strings"
 )
 
-// NormalizeURL removes the leading slash from URLs, and also
-// redirects root requests "/" to index.html.
-func NormalizeURL(url string) (object string) {
-	switch url {
-	case "/":
-		return "index.html"
-	default:
-		return url[1:]
-	}
+// NormalizePath:
+//   replace trailing slashes with "/index.html";
+//   remove leading slashes.
+func NormalizePath(path string) (object string) {
+    if strings.HasSuffix(path, "/") {
+        path = path + "index.html"
+    }
+    return strings.TrimLeft(path, "/")
 }
 
 func GetRuntimeProjectId() (string, error) {
