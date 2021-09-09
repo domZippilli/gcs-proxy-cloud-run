@@ -68,7 +68,7 @@ func englishToSpanish(c context.Context, mfh filter.MediaFilterHandle) error {
 // isHTML tests whether a file ends with "html".
 func isHTML(r http.Request) bool {
 	url := r.URL.String()
-	return strings.HasSuffix(common.NormalizeURL(url), "html")
+	return strings.HasSuffix(common.NormalizePath(url), "html")
 }
 
 // EXAMPLE: Block any SSNs.

@@ -54,7 +54,7 @@ func FillCache(ctx context.Context, handle MediaFilterHandle, setter CacheSet) e
 		}
 	}
 	// cache the media
-	cacheKey := common.NormalizeURL(handle.request.URL.String())
+	cacheKey := common.NormalizePath(handle.request.URL.String())
 	setter(cacheKey, cachedMedia.Bytes(), cacheExpiration)
 	return nil
 }
