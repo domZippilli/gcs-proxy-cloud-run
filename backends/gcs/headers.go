@@ -80,7 +80,7 @@ func getAttrs(ctx context.Context, objectHandle *storage.ObjectHandle) (
 			strings.HasPrefix(cacheControl, "max-age") {
 			ccSecs, err := strconv.Atoi(strings.Split(cacheControl, "=")[1])
 			if err != nil {
-				log.Fatal().Msgf("headers: %v", err)
+				log.Fatal().Msgf("getAttrs: %v", err)
 			} else {
 				expiry = time.Second * time.Duration(ccSecs)
 			}

@@ -75,13 +75,13 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	var pipeline filter.Pipeline
 	maybeMedia, hit := cacheGet(objectName)
 	if hit {
-		log.Debug().Msgf("gcs getwithcache: HIT")
+		log.Debug().Msgf("gcs ReadWithCache: HIT")
 		media = bytes.NewReader(maybeMedia)
 		// transformations may be cached; use cached content length
 		response.Header().Set("Content-Length", fmt.Sprint(len(maybeMedia)))
 		pipeline = hitPipeline
 	} else {
-		log.Debug().Msgf("gcs getwithcache: MISS")
+		log.Debug().Msgf("gcs ReadWithCache: MISS")
 		// get object content and send it
 		// TODO(domz): need an aggressive reader
 		objectContent, err := objectHandle.NewReader(ctx)
@@ -102,7 +102,6 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 		_, err = io.Copy(response, media)
 	}
 	if err != nil {
-		log.Error().Msgf("get: %v", err)
+		log.Error().Msgf("ReadWithCache: %v", err)
 	}
-	return
 }

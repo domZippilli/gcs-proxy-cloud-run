@@ -26,8 +26,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Read returns objects from a GCS bucket, mapping the URL to object names.
-// Media caching is bypassed.
+// ReadMetadata returns object metadata from a GCS bucket, mapping the URL to
+// object names.
 func ReadMetadata(ctx context.Context, response http.ResponseWriter,
 	request *http.Request, pipeline filter.Pipeline) {
 	// normalize path
@@ -58,6 +58,6 @@ func ReadMetadata(ctx context.Context, response http.ResponseWriter,
 		_, err = io.Copy(response, media)
 	}
 	if err != nil {
-		log.Error().Msgf("get: %v", err)
+		log.Error().Msgf("ReadMetadata: %v", err)
 	}
 }
