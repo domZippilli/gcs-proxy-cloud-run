@@ -33,7 +33,7 @@ RUN go mod download
 COPY . .
 
 # Build the binary.
-RUN go build -mod=readonly -v -o /bin/server .
+RUN go build -mod=readonly -v -o /bin/server cmd/gcs-proxy/main.go
 
 # Use the official Debian slim image for a lean production container.
 # https://hub.docker.com/_/debian
