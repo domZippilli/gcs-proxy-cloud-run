@@ -51,10 +51,11 @@ func main() {
 func ProxyHTTPGCS(output http.ResponseWriter, input *http.Request) {
 	ctx := context.Background()
 	// route HTTP methods to appropriate handlers.
-	// ===> Your filters go below here <===
 	switch input.Method {
 	case http.MethodGet:
 		config.GET(ctx, output, input)
+	case http.MethodHead:
+		config.HEAD(ctx, output, input)
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}
