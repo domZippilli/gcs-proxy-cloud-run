@@ -56,6 +56,8 @@ func ProxyHTTPGCS(output http.ResponseWriter, input *http.Request) {
 		config.GET(ctx, output, input)
 	case http.MethodHead:
 		config.HEAD(ctx, output, input)
+	case http.MethodOptions:
+		config.OPTIONS(ctx, output, input)
 	default:
 		http.Error(output, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
 	}

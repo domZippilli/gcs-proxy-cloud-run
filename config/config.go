@@ -18,20 +18,21 @@ import (
 	"net/http"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/backends/gcs"
+	"github.com/DomZippilli/gcs-proxy-cloud-function/backends/proxy"
 )
 
-// This function will be called once at the start of the program.
+// Setup will be called once at the start of the program.
 func Setup() error {
 	return gcs.Setup()
 }
 
-// This function will be called in main.go for GET requests
+// GET will be called in main.go for GET requests
 func GET(ctx context.Context, output http.ResponseWriter, input *http.Request) {
 	gcs.Read(ctx, output, input, LoggingOnly)
 	//gcs.ReadWithCache(ctx, output, input, CacheMedia, cacheGetter, LoggingOnly)
 }
 
-// func HEAD
+// HEAD will be called in main.go for HEAD requests
 func HEAD(ctx context.Context, output http.ResponseWriter, input *http.Request) {
 	gcs.ReadMetadata(ctx, output, input, LoggingOnly)
 }
@@ -39,3 +40,8 @@ func HEAD(ctx context.Context, output http.ResponseWriter, input *http.Request) 
 // func POST
 
 // func DELETE
+
+// OPTIONS will be called in main.go for OPTIONS requests
+func OPTIONS(ctx context.Context, output http.ResponseWriter, input *http.Request) {
+	proxy.SendOptions(ctx, output, input, LoggingOnly)
+}
