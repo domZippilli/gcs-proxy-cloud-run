@@ -17,17 +17,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-    "strings"
+	"strings"
 )
 
 // NormalizePath:
 //   replace trailing slashes with "/index.html";
 //   remove leading slashes.
 func NormalizePath(path string) (object string) {
-    if strings.HasSuffix(path, "/") {
-        path = path + "index.html"
-    }
-    return strings.TrimLeft(path, "/")
+	if strings.HasSuffix(path, "/") {
+		path = path + "index.html"
+	}
+	return strings.TrimLeft(path, "/")
 }
 
 func GetRuntimeProjectId() (string, error) {
@@ -50,6 +50,9 @@ func GetRuntimeProjectId() (string, error) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("get project id: %v", string(bodyBytes))
+	}
+	if err != nil {
+		return "", fmt.Errorf("get project id: %v", err)
 	}
 	return string(bodyBytes), nil
 }
