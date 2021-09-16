@@ -20,12 +20,14 @@ import (
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/config"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 func main() {
 	// initialize
 	log.Print("starting server...")
-	http.HandleFunc("/", ProxyHTTPGCS)
+	handler := http.HandlerFunc(ProxyHTTPGCS)
 
 	// Determine port for HTTP service.
 	port := os.Getenv("PORT")
@@ -41,7 +43,8 @@ func main() {
 
 	// Start HTTP server.
 	log.Printf("listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	http2server := &http2.Server{}
+	if err := http.ListenAndServe(":"+port, h2c.NewHandler(handler, http2server)); err != nil {
 		log.Fatal().Msgf("main: %v", err)
 	}
 }
