@@ -21,6 +21,8 @@ function usage(){
     echo >&2
     echo "BUCKET_NAME is required. This is the bucket to proxy." >&2
     echo >&2
+    echo "REGION is required. This is the region to run the proxy in (probably should match bucket)." >&2
+    echo >&2
     echo "project is optional; your gcloud config project will be used if it" >&2
     echo "is not provided." >&2
     echo >&2
