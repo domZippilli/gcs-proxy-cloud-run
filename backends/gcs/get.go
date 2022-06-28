@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//	https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/DomZippilli/gcs-proxy-cloud-function/common"
@@ -59,8 +58,9 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	// Cache-Control header, so this will not call GCS unless there's a miss.
 	// In general, header hits and media hits should line up.
 	objectHandle := gcs.Bucket(bucket).Object(objectName)
-	// get static-serving metadata and set headers
-	err := setHeaders(ctx, objectHandle, response)
+	// get object metadata and set headers
+	objectAttrs, _ := getAttrs(ctx, objectHandle)
+	err := setHeaders(ctx, objectAttrs, response)
 	if err != nil {
 		if err == storage.ErrObjectNotExist {
 			http.Error(response, "", http.StatusNotFound)
@@ -71,12 +71,14 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	}
 
 	// try the media cache
-	var media io.Reader
+	gcsMedia := &common.ReadFFwder{
+		Size: objectAttrs.Size,
+	}
 	var pipeline filter.Pipeline
 	maybeMedia, hit := cacheGet(objectName)
 	if hit {
 		log.Debug().Msgf("gcs ReadWithCache: HIT")
-		media = bytes.NewReader(maybeMedia)
+		gcsMedia.Media = bytes.NewReader(maybeMedia)
 		// transformations may be cached; use cached content length
 		response.Header().Set("Content-Length", fmt.Sprint(len(maybeMedia)))
 		pipeline = hitPipeline
@@ -89,17 +91,27 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 			log.Error().Msgf("get: %v", err)
 		}
 		defer objectContent.Close()
-		media = objectContent
+		gcsMedia.Media = objectContent
 		pipeline = missPipeline
 	}
 
 	// serve the media
 	if len(pipeline) > 0 {
 		// use a filter pipeline
-		_, err = filter.PipelineCopy(ctx, response, media, request, pipeline)
+		filterReader := filter.PipelineCopy(ctx, response, gcsMedia, request, pipeline)
+		finalMedia := &common.ReadFFwder{
+			Media: filterReader,
+			// As a compromise, we are going to use the object's size here.
+			// It doesn't matter if the request doesn't have a range header.
+			// And, it works with a range header if your pipeline doesn't modify the body.
+			// But, if you try to use a range header on a modified body, behavior is undefined.
+			// TODO: Consider blocking range requests in some circumstances.
+			Size: objectAttrs.Size,
+		}
+		http.ServeContent(response, request, objectHandle.ObjectName(), objectAttrs.Created, finalMedia)
 	} else {
 		// unfiltered, simple copy
-		_, err = io.Copy(response, media)
+		http.ServeContent(response, request, objectHandle.ObjectName(), objectAttrs.Created, gcsMedia)
 	}
 	if err != nil {
 		log.Error().Msgf("ReadWithCache: %v", err)

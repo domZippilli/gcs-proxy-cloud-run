@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//	https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,6 @@ package gcs
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"strings"
 
@@ -37,8 +36,9 @@ func ReadMetadata(ctx context.Context, response http.ResponseWriter,
 	// Cache-Control header, so this will not call GCS unless there's a miss.
 	// In general, header hits and media hits should line up.
 	objectHandle := gcs.Bucket(bucket).Object(objectName)
-	// get static-serving metadata and set headers
-	err := setHeaders(ctx, objectHandle, response)
+	// get object metadata and set headers
+	objectAttrs, _ := getAttrs(ctx, objectHandle)
+	err := setHeaders(ctx, objectAttrs, response)
 	if err != nil {
 		if err == storage.ErrObjectNotExist {
 			http.Error(response, "", http.StatusNotFound)
@@ -49,13 +49,22 @@ func ReadMetadata(ctx context.Context, response http.ResponseWriter,
 	}
 
 	// serve the metadata
-	media := strings.NewReader("")
+	emptyMedia := &common.ReadFFwder{
+		Media: strings.NewReader(""),
+		Size:  0,
+	}
 	if len(pipeline) > 0 {
 		// use a filter pipeline
-		_, err = filter.PipelineCopy(ctx, response, media, request, pipeline)
+		filterReader := filter.PipelineCopy(ctx, response, emptyMedia, request, pipeline)
+		finalMedia := &common.ReadFFwder{
+			Media: filterReader,
+			// Adding body in HEAD pipelines is not conformant HTTP; in this proxy, it leads to undefined behavior
+			Size: 0,
+		}
+		http.ServeContent(response, request, objectHandle.ObjectName(), objectAttrs.Created, finalMedia)
 	} else {
 		// unfiltered, simple copy
-		_, err = io.Copy(response, media)
+		http.ServeContent(response, request, objectHandle.ObjectName(), objectAttrs.Created, emptyMedia)
 	}
 	if err != nil {
 		log.Error().Msgf("ReadMetadata: %v", err)

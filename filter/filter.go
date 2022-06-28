@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//	https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,7 +39,7 @@ type MediaFilterHandle struct {
 }
 
 // Performs a copy of input to response, with filters applied to the input.
-func PipelineCopy(ctx context.Context, response http.ResponseWriter, input io.Reader, request *http.Request, pipeline Pipeline) (int64, error) {
+func PipelineCopy(ctx context.Context, response http.ResponseWriter, input io.Reader, request *http.Request, pipeline Pipeline) io.Reader {
 	inputReader, inputWriter := io.Pipe()
 	// prime the pump by writing the input to the first pipe
 	go func() {
@@ -68,7 +68,7 @@ func PipelineCopy(ctx context.Context, response http.ResponseWriter, input io.Re
 		// update last filter pipereader for next filter or output
 		lastFilterReader = filterReader
 	}
-	return io.Copy(response, lastFilterReader)
+	return lastFilterReader
 }
 
 // NoOp does nothing to the media.
