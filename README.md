@@ -71,7 +71,7 @@ For more information, check out the documentation in `main/filter/filter.go`.
 
 ## Copyright
 
-Copyright 2021, Google LLC.
+Copyright 2022, Google LLC.
 
 ## License Summary (Apache 2.0) 
 ``` text
