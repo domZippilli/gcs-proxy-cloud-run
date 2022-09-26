@@ -39,7 +39,7 @@ if [[ "${IMAGE_NAME}" == *help ]] || [[ "${IMAGE_NAME}" == "-h" ]]; then
     exit
 fi
 
-gcloud builds submit --tag "${TAG}"
+gcloud --project="${PROJECT}" builds submit --tag "${TAG}"
 
 echo Container image built:
 echo "${TAG}" 
