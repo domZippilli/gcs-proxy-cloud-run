@@ -26,11 +26,15 @@ function usage(){
     echo >&2
 }
 
-IMAGE_NAME=${1-}
 IMAGE_NAME="${1:-gcs-streaming-proxy}"
-PROJECT=${2-}
-PROJECT="${2:-$(gcloud config get-value project)}"
+PROJECT="${2:-$(gcloud config get-value project 2>/dev/null)}"
 TAG=gcr.io/"${PROJECT}"/"${IMAGE_NAME}"
+
+if [[ -z "$PROJECT" ]]; then
+    echo >&2 "ERROR: Could not determine project. Please specify it explicitly."
+    usage
+    exit 2
+fi
 
 # quick and dirty way to catch if the user asks for help, like --help
 # downside: you can't tag the image as *help or just "-h"
@@ -39,7 +43,7 @@ if [[ "${IMAGE_NAME}" == *help ]] || [[ "${IMAGE_NAME}" == "-h" ]]; then
     exit
 fi
 
-gcloud builds submit --tag "${TAG}"
+gcloud --project="${PROJECT}" builds submit --tag "${TAG}"
 
 echo Container image built:
 echo "${TAG}" 

@@ -34,12 +34,15 @@ function usage(){
 
 BUCKET_NAME=${1?$(usage)}
 REGION=${2?$(usage)}
-PROJECT=${3-}
-PROJECT="${3:-$(gcloud config get-value project)}"
-IMAGE_NAME=${4-}
+PROJECT="${3:-$(gcloud config get-value project 2>/dev/null)}"
 IMAGE_NAME="${4:-gcr.io/${PROJECT}/gcs-streaming-proxy}"
-SERVICE_NAME=${5-}
 SERVICE_NAME="${5:-gcs-${BUCKET_NAME}}"
+
+if [[ -z "$PROJECT" ]]; then
+    echo >&2 "ERROR: Could not determine project. Please specify it explicitly."
+    usage
+    exit 2
+fi
 
 # quick and dirty way to catch if the user asks for help, like --help
 # downside: you can't tag the image as *help or just "-h"
