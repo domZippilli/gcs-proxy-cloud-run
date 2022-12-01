@@ -63,7 +63,6 @@ gcloud run deploy "${SERVICE_NAME}" \
     --timeout=300s \
     --platform managed \
     --allow-unauthenticated \
-    --ingress=all \
-    --use-http2
+    --ingress=all
 
 echo Service deployed.
