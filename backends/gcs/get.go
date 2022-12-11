@@ -61,12 +61,24 @@ func ReadWithCache(ctx context.Context, response http.ResponseWriter,
 	objectHandle := gcs.Bucket(bucket).Object(objectName)
 	// get static-serving metadata and set headers
 	err := setHeaders(ctx, objectHandle, response)
+
 	if err != nil {
 		if err == storage.ErrObjectNotExist {
 			http.Error(response, "", http.StatusNotFound)
 			return
 		} else {
 			log.Error().Msgf("get: %v", err)
+		}
+	}
+
+	// handle Etag
+	ifNoneMatchHeaders, ifNoneMatchHeaderPresent := request.Header[http.CanonicalHeaderKey("if-none-match")]
+	if ifNoneMatchHeaderPresent {
+		for _, etag := range ifNoneMatchHeaders {
+			if etag == response.Header().Get("Etag") {
+				response.WriteHeader(http.StatusNotModified)
+				return
+			}
 		}
 	}
 
