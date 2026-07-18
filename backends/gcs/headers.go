@@ -55,6 +55,9 @@ func setHeaders(ctx context.Context, objectHandle *storage.ObjectHandle,
 	if objectAttrs.ContentType != "" {
 		response.Header().Set("Content-Type", objectAttrs.ContentType)
 	}
+	if objectAttrs.Etag != "" {
+		response.Header().Set("Etag", objectAttrs.Etag)
+	}
 	response.Header().Set("Content-Length", fmt.Sprint(objectAttrs.Size))
 	return
 }
